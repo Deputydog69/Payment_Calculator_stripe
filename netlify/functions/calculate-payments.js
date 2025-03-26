@@ -1,5 +1,5 @@
 exports.handler = async function(event) {
-  const AUTH_KEY = "ems-key-9205643ef502";
+  const AUTH_KEY = "ems-key-77a8655";
   const providedKey = event.headers["x-api-key"];
 
   if (providedKey !== AUTH_KEY) {
@@ -18,6 +18,7 @@ exports.handler = async function(event) {
         totalAmount: invoiceAmount,
         numberOfPayments: 0,
         payments: [],
+        stringifiedPayments: "[]",
         error: message
       })
     };
@@ -101,6 +102,7 @@ exports.handler = async function(event) {
         totalAmount: invoiceAmount,
         numberOfPayments,
         payments,
+        stringifiedPayments: JSON.stringify(payments),
         invoiceNumber,
         summary: summaryText
       })
