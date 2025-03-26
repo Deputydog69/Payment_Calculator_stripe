@@ -1,4 +1,4 @@
-const AUTH_KEY = "ems-key-9205643ef502";
+const AUTH_KEY = "ems-key-77a8655";
 
 function formatDateUK(dateStr) {
   const [yyyy, mm, dd] = dateStr.split("-");
@@ -18,12 +18,14 @@ exports.handler = async (event) => {
   try {
     const input = JSON.parse(event.body);
 
-    // Safely parse double-encoded stringifiedPayments
+    // Safely decode double-encoded stringifiedPayments from Zendesk
     let payments = [];
     try {
       const raw = input.stringifiedPayments;
-      const unescaped = typeof raw === "string" ? raw.replace(/^"|"$/g, '').replace(/\"/g, '"') : "[]";
-      payments = JSON.parse(unescaped);
+      const parsed = typeof raw === "string"
+        ? JSON.parse(raw.startsWith('"') ? JSON.parse(raw) : raw)
+        : raw;
+      payments = Array.isArray(parsed) ? parsed : [];
     } catch {
       payments = [];
     }
