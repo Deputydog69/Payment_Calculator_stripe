@@ -1,4 +1,4 @@
-const AUTH_KEY = "ems-key-9205643ef502";
+const AUTH_KEY = "ems-key-77a8655";
 
 exports.handler = async (event) => {
   const providedKey = event.headers["x-api-key"];
@@ -13,9 +13,14 @@ exports.handler = async (event) => {
   try {
     const input = JSON.parse(event.body);
     const payments = input.payments;
-    const userId = input.userId || "unknown";
-    const orgId = input.zendeskOrgId || "unknown";
-    const orgName = input.zendeskOrgName || "unknown";
+
+    // Optional metadata
+    const userId = input.userId || "";
+    const orgId = input.zendeskOrgId || "";
+    const orgName = input.zendeskOrgName || "";
+    const userName = input.userName || "";
+    const email = input.email || "";
+    const propRef = input.propRef || "";
 
     if (!Array.isArray(payments) || payments.length === 0) {
       return {
@@ -29,9 +34,9 @@ exports.handler = async (event) => {
       `${i + 1}. £${p.amount} on ${p.date}`
     ).join("\n");
 
-    const encodedPlan = encodeURIComponent(planText);
-    const jotformBase = "https://form.jotform.com/your-form-id"; // replace with actual form ID
-    const fullURL = `${jotformBase}?plan=${encodedPlan}&user_id=${encodeURIComponent(userId)}&org_id=${encodeURIComponent(orgId)}&org_name=${encodeURIComponent(orgName)}`;
+    const encode = encodeURIComponent;
+    const jotformBase = "https://form.jotform.com/250839206727058";
+    const fullURL = `${jotformBase}?plan=${encode(planText)}&user_id=${encode(userId)}&org_id=${encode(orgId)}&org_name=${encode(orgName)}&user_name=${encode(userName)}&email=${encode(email)}&prop_ref=${encode(propRef)}`;
 
     return {
       statusCode: 200,
