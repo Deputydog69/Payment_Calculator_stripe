@@ -1,15 +1,25 @@
-
 exports.handler = async function(event) {
-  const AUTH_KEY = "ems-key-9205643ef502";
+  const AUTH_KEY = "ems-key-77a8655";
   const providedKey = event.headers["x-api-key"];
 
   if (providedKey !== AUTH_KEY) {
     return {
       statusCode: 401,
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ error: "Unauthorized" })
+    };
+  }
+
+  function responseWithError(message, invoiceAmount) {
+    return {
+      statusCode: 400,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        totalAmount: invoiceAmount,
+        numberOfPayments: 0,
+        payments: [],
+        error: message
+      })
     };
   }
 
@@ -66,40 +76,30 @@ exports.handler = async function(event) {
       currentDate.setMonth(currentDate.getMonth() + 1);
     }
 
+    const firstPayment = payments[0];
+    const lastPayment = payments[payments.length - 1];
+    const recurringAmount = payments.length > 1 ? payments[1].amount.toFixed(2) : null;
+
+    const summaryText = payments.length === 1
+      ? `A single payment of £${firstPayment.amount.toFixed(2)} on ${firstPayment.date}.`
+      : `Your 1st payment will be £${firstPayment.amount.toFixed(2)} on ${firstPayment.date}. You’ll then make ${payments.length - 1} monthly payments of £${recurringAmount} on the ${preferredPaymentDate} of each month, with your final payment on ${lastPayment.date}.`;
+
     return {
       statusCode: 200,
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         totalAmount: invoiceAmount,
         numberOfPayments,
-        payments
+        payments,
+        summary: summaryText
       })
     };
 
   } catch (error) {
     return {
       statusCode: 500,
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ error: error.message })
-    };
-  }
-
-  function responseWithError(message, invoiceAmount) {
-    return {
-      statusCode: 400,
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        totalAmount: invoiceAmount,
-        numberOfPayments: 0,
-        payments: [],
-        error: message
-      })
     };
   }
 };
