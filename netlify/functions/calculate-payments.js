@@ -1,5 +1,5 @@
 exports.handler = async function(event) {
-  const AUTH_KEY = "ems-key-9205643ef502";
+  const AUTH_KEY = "ems-key-77a8655";
   const providedKey = event.headers["x-api-key"];
 
   if (providedKey !== AUTH_KEY) {
@@ -31,7 +31,8 @@ exports.handler = async function(event) {
   try {
     const input = JSON.parse(event.body);
     const invoiceAmount = Number(input.invoiceAmount);
-    const endDateObj = new Date(input.endDate);
+    const [endDay, endMonth, endYear] = input.endDate.split("-");
+    const endDateObj = new Date(`${endYear}-${endMonth}-${endDay}`);
     const preferredPaymentDate = parseInt(input.preferredPaymentDate, 10);
     const invoiceNumber = input.invoiceNumber || "N/A";
 
