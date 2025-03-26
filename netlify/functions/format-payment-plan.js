@@ -1,4 +1,4 @@
-const AUTH_KEY = "ems-key-77a8655";
+const AUTH_KEY = "ems-key-9205643ef502";
 
 exports.handler = async (event) => {
   const providedKey = event.headers["x-api-key"];
