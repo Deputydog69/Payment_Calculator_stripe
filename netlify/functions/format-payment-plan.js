@@ -1,4 +1,4 @@
-const AUTH_KEY = "ems-key-77a8655";
+const AUTH_KEY = "ems-key-9205643ef502";
 
 function formatDateUK(dateStr) {
   const [yyyy, mm, dd] = dateStr.split("-");
