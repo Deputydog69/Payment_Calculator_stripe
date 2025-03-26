@@ -1,0 +1,8 @@
+{
+  "name": "payment-calculator",
+  "version": "1.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "stripe": "^14.x.x"
+  }
+}
