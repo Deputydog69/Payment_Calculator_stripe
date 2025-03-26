@@ -1,5 +1,5 @@
 exports.handler = async function(event) {
-  const AUTH_KEY = "ems-key-9205643ef502";
+  const AUTH_KEY = "ems-key-77a8655";
   const providedKey = event.headers["x-api-key"];
 
   if (providedKey !== AUTH_KEY) {
@@ -23,11 +23,17 @@ exports.handler = async function(event) {
     };
   }
 
+  function formatDateUK(dateStr) {
+    const [yyyy, mm, dd] = dateStr.split("-");
+    return `${dd}-${mm}-${yyyy.slice(2)}`;
+  }
+
   try {
     const input = JSON.parse(event.body);
     const invoiceAmount = Number(input.invoiceAmount);
     const endDateObj = new Date(input.endDate);
     const preferredPaymentDate = parseInt(input.preferredPaymentDate, 10);
+    const invoiceNumber = input.invoiceNumber || "N/A";
 
     if (isNaN(invoiceAmount) || invoiceAmount <= 0) {
       return responseWithError("Invoice amount must be a positive number", invoiceAmount);
@@ -68,9 +74,10 @@ exports.handler = async function(event) {
         ? basePaymentAmount + remainder 
         : basePaymentAmount;
 
+      const dateString = currentDate.toISOString().split('T')[0];
       payments.push({
         amount: Number(amount.toFixed(2)),
-        date: currentDate.toISOString().split('T')[0]
+        date: dateString
       });
 
       currentDate.setMonth(currentDate.getMonth() + 1);
@@ -79,10 +86,12 @@ exports.handler = async function(event) {
     const firstPayment = payments[0];
     const lastPayment = payments[payments.length - 1];
     const recurringAmount = payments.length > 1 ? payments[1].amount.toFixed(2) : null;
+    const formattedFirstDate = formatDateUK(firstPayment.date);
+    const formattedLastDate = formatDateUK(lastPayment.date);
 
     const summaryText = payments.length === 1
-      ? `A single payment of £${firstPayment.amount.toFixed(2)} on ${firstPayment.date}.`
-      : `Your 1st payment will be £${firstPayment.amount.toFixed(2)} on ${firstPayment.date}. You’ll then make ${payments.length - 1} monthly payments of £${recurringAmount} on the ${preferredPaymentDate} of each month, with your final payment on ${lastPayment.date}.`;
+      ? `This payment plan relates to invoice No: ${invoiceNumber}. A single payment of £${firstPayment.amount.toFixed(2)} on ${formattedFirstDate}.`
+      : `This payment plan relates to invoice No: ${invoiceNumber}. The 1st payment should be £${firstPayment.amount.toFixed(2)} on ${formattedFirstDate}. Then please make ${payments.length - 1} equal monthly payments of £${recurringAmount} on the ${preferredPaymentDate} of each month, with your final payment on ${formattedLastDate}.`;
 
     return {
       statusCode: 200,
@@ -91,6 +100,7 @@ exports.handler = async function(event) {
         totalAmount: invoiceAmount,
         numberOfPayments,
         payments,
+        invoiceNumber,
         summary: summaryText
       })
     };
