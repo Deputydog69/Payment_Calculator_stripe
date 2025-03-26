@@ -1,6 +1,16 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
+const AUTH_KEY = "ems-key-77a8655";
+
 exports.handler = async (event) => {
+  const providedKey = event.headers["x-api-key"];
+  if (providedKey !== AUTH_KEY) {
+    return {
+      statusCode: 401,
+      body: JSON.stringify({ error: "Unauthorized" }),
+    };
+  }
+
   try {
     const { sessionId } = JSON.parse(event.body);
     const YOUR_DOMAIN = 'https://storied-horse-3d1ec7.netlify.app';
@@ -25,7 +35,7 @@ exports.handler = async (event) => {
     return {
       statusCode: 200,
       body: JSON.stringify({
-        url: session.url.split('#')[0],  // Return clean URL without fragment
+        url: session.url.split('#')[0],
         sessionId: session.id
       }),
     };
