@@ -1,8 +1,12 @@
 {
-  "name": "payment-calculator",
+  "name": "netlify-functions-project",
   "version": "1.0.0",
+  "description": "Netlify functions with date-fns support",
   "main": "index.js",
+  "scripts": {
+    "start": "netlify dev"
+  },
   "dependencies": {
-    "stripe": "^14.x.x"
+    "date-fns": "^3.6.0"
   }
 }
