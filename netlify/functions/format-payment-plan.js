@@ -44,15 +44,15 @@ exports.handler = async (event) => {
 
     const jotformBase = "https://form.jotform.com/250839206727058";
     const allParams = new URLSearchParams({
-      plan14: rawPlan.replace(/£/g, 'GBP'),
-      user_name: userName,
-      email,
-      user_id: userId,
-      org_id: zendeskOrgId,
-      org_name: zendeskOrgName,
-      prop_ref: propRef,
-      invoice_no: invoiceNo
-    });
+  plan14: encodeURIComponent(rawPlan.replace(/£/g, 'GBP')),
+  user_name: encodeURIComponent(userName),
+  email: encodeURIComponent(email),
+  user_id: encodeURIComponent(userId),
+  org_id: encodeURIComponent(zendeskOrgId),
+  org_name: encodeURIComponent(zendeskOrgName),
+  prop_ref: encodeURIComponent(propRef),
+  invoice_no: encodeURIComponent(invoiceNo)
+});
     const jotformURL = `${jotformBase}?${allParams.toString()}`;
 
     return {
