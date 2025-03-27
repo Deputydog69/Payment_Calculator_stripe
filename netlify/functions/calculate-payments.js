@@ -1,6 +1,6 @@
 const { parse, isValid, subDays, format } = require('date-fns');
 
-const EMS_KEY = "ems_Key_32435457ef543";
+const EMS_KEY = "ems-key-9205643ef502";
 
 function parseFlexibleDate(inputStr) {
   const formats = [
