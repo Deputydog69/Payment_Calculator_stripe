@@ -1,7 +1,7 @@
 // version: 10.3
 
 exports.handler = async (event) => {
-  const EMS_KEY = "ems-key-453tgreg45rthrte";
+  const EMS_KEY = "ems-key-9205643ef502";
 
   try {
     const incomingKey = event.headers['x-api-key'] || event.headers['X-API-Key'] || event.headers['x-api-key'.toLowerCase()];
