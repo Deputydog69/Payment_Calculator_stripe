@@ -1,7 +1,7 @@
-// version: 10.3
+// version: 10.5
 
 exports.handler = async (event) => {
-  const EMS_KEY = "ems-key-9205643ef502";
+  const EMS_KEY = process.env.EMS_KEY;
 
   try {
     const incomingKey = event.headers['x-api-key'] || event.headers['X-API-Key'] || event.headers['x-api-key'.toLowerCase()];
@@ -21,7 +21,7 @@ exports.handler = async (event) => {
     const zendeskOrgId = body.zendeskOrgId || '';
     const zendeskOrgName = body.zendeskOrgName || '';
     const propRef = body.propRef || '';
-    const invoiceNo = body.invoiceNumber || 'unknown';
+    const invoiceNo = body.invoiceNo || '';
 
     if (!rawPlan || typeof rawPlan !== 'string') {
       return {
@@ -46,8 +46,8 @@ exports.handler = async (event) => {
 
     const jotformBase = "https://form.jotform.com/250839206727058";
     const allParams = new URLSearchParams({
-      plan14: encodeURIComponent(rawPlan.replace(/£/g, 'GBP')),
-      user_name: encodeURIComponent(userName),
+      plan14: rawPlan.replace(/£/g, 'GBP'),
+      user_name: $1,
       email: encodeURIComponent(email),
       user_id: encodeURIComponent(userId),
       org_id: encodeURIComponent(zendeskOrgId),
