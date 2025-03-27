@@ -1,13 +1,10 @@
-// version: 10.2
+// version: 10.3
 
 exports.handler = async (event) => {
-  const EMS_KEY = "ems_Key_32435457ef543";
+  const EMS_KEY = "ems-key-453tgreg45rthrte";
 
   try {
-    const incomingKey =
-      event.headers['x-api-key'] ||
-      event.headers['X-API-Key'] ||
-      event.headers['x-api-key'.toLowerCase()];
+    const incomingKey = event.headers['x-api-key'] || event.headers['X-API-Key'] || event.headers['x-api-key'.toLowerCase()];
     if (!incomingKey || incomingKey !== EMS_KEY) {
       return {
         statusCode: 401,
@@ -49,14 +46,14 @@ exports.handler = async (event) => {
 
     const jotformBase = "https://form.jotform.com/250839206727058";
     const allParams = new URLSearchParams({
-      plan14: rawPlan.replace(/£/g, 'GBP'),
-      user_name: userName,
-      email: email,
-      user_id: userId,
-      org_id: zendeskOrgId,
-      org_name: zendeskOrgName,
-      prop_ref: propRef,
-      invoice_no: invoiceNo
+      plan14: encodeURIComponent(rawPlan.replace(/£/g, 'GBP')),
+      user_name: encodeURIComponent(userName),
+      email: encodeURIComponent(email),
+      user_id: encodeURIComponent(userId),
+      org_id: encodeURIComponent(zendeskOrgId),
+      org_name: encodeURIComponent(zendeskOrgName),
+      prop_ref: encodeURIComponent(propRef),
+      invoice_no: encodeURIComponent(invoiceNo)
     });
 
     const fullUrl = `${jotformBase}?${allParams.toString()}`;
@@ -68,11 +65,11 @@ exports.handler = async (event) => {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        rawPlan,
-        summary,
         jotform_url1,
         jotform_url2,
-        jotform_url3
+        jotform_url3,
+        rawPlan,
+        summary
       })
     };
   } catch (err) {
