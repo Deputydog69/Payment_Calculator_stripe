@@ -1,9 +1,13 @@
-// version: 2025-03-27-02
+// version: 10.2
+
 exports.handler = async (event) => {
-  const EMS_KEY = "ems-key-9205643ef502";
+  const EMS_KEY = "ems_Key_32435457ef543";
 
   try {
-    const incomingKey = event.headers['x-api-key'] || event.headers['X-API-Key'] || event.headers['x-api-key'.toLowerCase()];
+    const incomingKey =
+      event.headers['x-api-key'] ||
+      event.headers['X-API-Key'] ||
+      event.headers['x-api-key'.toLowerCase()];
     if (!incomingKey || incomingKey !== EMS_KEY) {
       return {
         statusCode: 401,
@@ -54,6 +58,7 @@ exports.handler = async (event) => {
       prop_ref: propRef,
       invoice_no: invoiceNo
     });
+
     const fullUrl = `${jotformBase}?${allParams.toString()}`;
     const jotform_url1 = fullUrl.slice(0, 280);
     const jotform_url2 = fullUrl.slice(280, 560);
@@ -63,11 +68,11 @@ exports.handler = async (event) => {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        rawPlan,
+        summary,
         jotform_url1,
         jotform_url2,
-        jotform_url3,
-        rawPlan,
-        summary
+        jotform_url3
       })
     };
   } catch (err) {
