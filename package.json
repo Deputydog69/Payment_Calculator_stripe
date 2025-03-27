@@ -1,12 +1,13 @@
 {
   "name": "netlify-functions-project",
   "version": "1.0.0",
-  "description": "Netlify functions with date-fns support",
+  "description": "Netlify functions with date-fns and Stripe support",
   "main": "index.js",
   "scripts": {
     "start": "netlify dev"
   },
   "dependencies": {
-    "date-fns": "^3.6.0"
+    "date-fns": "^3.6.0",
+    "stripe": "^12.19.0"
   }
 }
