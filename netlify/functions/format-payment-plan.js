@@ -29,8 +29,7 @@ exports.handler = async (event) => {
       };
     }
 
-    // Accept both real and escaped newlines
-    const lines = rawPlan.split(/\n|\n|\r|\r\n/g);
+    const lines = rawPlan.split(/\n|\r\n?/);
 
     const firstLine = lines[0]?.match(/£([\d.]+) on (\d{2}-\d{2}-\d{4})/);
     const lastLine = lines[lines.length - 1]?.match(/(\d{2}-\d{2}-\d{4})/);
@@ -45,7 +44,7 @@ exports.handler = async (event) => {
 
     const jotformBase = "https://form.jotform.com/250839206727058";
     const allParams = new URLSearchParams({
-      plan14: rawPlan.replace(/£/g, '&pound;').replace(/ /g, '+'),
+      plan14: rawPlan,
       user_name: userName,
       email,
       user_id: userId,
