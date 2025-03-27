@@ -45,7 +45,7 @@ exports.handler = async (event) => {
 
     const jotformBase = "https://form.jotform.com/250839206727058";
     const searchParams = new URLSearchParams({
-      plan: encodeURIComponent(rawPlan),
+      plan: rawPlan,
       user_name: userName,
       email: email,
       user_id: userId,
