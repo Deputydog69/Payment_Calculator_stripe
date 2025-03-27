@@ -1,3 +1,4 @@
+// version: 2025-03-27-02
 exports.handler = async (event) => {
   const EMS_KEY = "ems-key-9205643ef502";
 
@@ -44,22 +45,27 @@ exports.handler = async (event) => {
 
     const jotformBase = "https://form.jotform.com/250839206727058";
     const allParams = new URLSearchParams({
-  plan14: encodeURIComponent(rawPlan.replace(/£/g, 'GBP')),
-  user_name: encodeURIComponent(userName),
-  email: encodeURIComponent(email),
-  user_id: encodeURIComponent(userId),
-  org_id: encodeURIComponent(zendeskOrgId),
-  org_name: encodeURIComponent(zendeskOrgName),
-  prop_ref: encodeURIComponent(propRef),
-  invoice_no: encodeURIComponent(invoiceNo)
-});
-    const jotformURL = `${jotformBase}?${allParams.toString()}`;
+      plan14: rawPlan.replace(/£/g, 'GBP'),
+      user_name: userName,
+      email: email,
+      user_id: userId,
+      org_id: zendeskOrgId,
+      org_name: zendeskOrgName,
+      prop_ref: propRef,
+      invoice_no: invoiceNo
+    });
+    const fullUrl = `${jotformBase}?${allParams.toString()}`;
+    const jotform_url1 = fullUrl.slice(0, 280);
+    const jotform_url2 = fullUrl.slice(280, 560);
+    const jotform_url3 = fullUrl.slice(560);
 
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        jotformURL,
+        jotform_url1,
+        jotform_url2,
+        jotform_url3,
         rawPlan,
         summary
       })
