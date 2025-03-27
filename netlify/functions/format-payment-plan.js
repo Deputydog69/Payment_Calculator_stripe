@@ -14,7 +14,7 @@ function parseFlexibleDate(inputStr) {
       }
     } catch {}
   }
-  return inputStr; // fallback
+  return inputStr;
 }
 
 function getOrdinalSuffix(day) {
@@ -27,7 +27,17 @@ function getOrdinalSuffix(day) {
 }
 
 exports.handler = async (event) => {
+  const EMS_KEY = "ems_Key_32435457ef543";
+
   try {
+    const incomingKey = event.headers['x-api-key'] || event.headers['X-API-Key'] || event.headers['x-api-key'.toLowerCase()];
+    if (!incomingKey || incomingKey !== EMS_KEY) {
+      return {
+        statusCode: 401,
+        body: JSON.stringify({ error: "Unauthorised request" })
+      };
+    }
+
     const body = JSON.parse(event.body);
     const rawString = body.stringifiedPayments;
 
