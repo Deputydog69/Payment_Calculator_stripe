@@ -1,118 +1,84 @@
-exports.handler = async function(event) {
-  const AUTH_KEY = "ems-key-9205643ef502";
-  const providedKey = event.headers["x-api-key"];
+const { parse, isValid, subDays, format } = require('date-fns');
 
-  if (providedKey !== AUTH_KEY) {
-    return {
-      statusCode: 401,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ error: "Unauthorized" })
-    };
-  }
+function parseFlexibleDate(inputStr) {
+  const formats = [
+    'dd/MM/yy', 'dd-MM-yy',
+    'dd/MM/yyyy', 'dd-MM-yyyy',
+    'ddMMyy', 'ddMMyyyy',
+    'yyyy-MM-dd'
+  ];
 
-  function responseWithError(message, invoiceAmount) {
-    return {
-      statusCode: 400,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        totalAmount: invoiceAmount,
-        numberOfPayments: 0,
-        payments: [],
-        stringifiedPayments: "[]",
-        error: message
-      })
-    };
-  }
-
-  function formatDateUK(dateStr) {
-    const [yyyy, mm, dd] = dateStr.split("-");
-    return `${dd}-${mm}-${yyyy.slice(2)}`;
+  for (const fmt of formats) {
+    try {
+      const parsed = parse(inputStr, fmt, new Date());
+      if (isValid(parsed)) return parsed;
+    } catch {}
   }
 
   try {
-    const input = JSON.parse(event.body);
-    const invoiceAmount = Number(input.invoiceAmount);
-    const [endDay, endMonth, endYear] = input.endDate.split("-");
-    const endDateObj = new Date(`${endYear}-${endMonth}-${endDay}`);
-    const preferredPaymentDate = parseInt(input.preferredPaymentDate, 10);
-    const invoiceNumber = input.invoiceNumber || "N/A";
+    const parsed = new Date(inputStr);
+    return isValid(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
 
-    if (isNaN(invoiceAmount) || invoiceAmount <= 0) {
-      return responseWithError("Invoice amount must be a positive number", invoiceAmount);
+function fallbackToPreviousValidDate(inputStr) {
+  let date = parseFlexibleDate(inputStr);
+  let attempts = 0;
+
+  while ((!date || !isValid(date)) && attempts < 5) {
+    date = subDays(date || new Date(), 1);
+    attempts++;
+  }
+
+  return isValid(date) ? date : null;
+}
+
+exports.handler = async (event) => {
+  try {
+    const body = JSON.parse(event.body);
+    const invoiceAmount = parseFloat(body.invoiceAmount);
+    const endDateInput = body.endDate;
+    const preferredDay = parseInt(body.preferredPaymentDate);
+
+    const endDate = fallbackToPreviousValidDate(endDateInput);
+    if (!endDate || isNaN(invoiceAmount) || isNaN(preferredDay)) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: "Invalid input values." })
+      };
     }
-
-    if (isNaN(endDateObj.getTime())) {
-      return responseWithError("Invalid end date", invoiceAmount);
-    }
-
-    if (![1, 15].includes(preferredPaymentDate)) {
-      return responseWithError("Preferred payment day must be 1 or 15", invoiceAmount);
-    }
-
-    const today = new Date();
-    const invoiceYear = endDateObj.getFullYear();
-    const invoiceMonth = endDateObj.getMonth();
-    const lastPossiblePaymentDate = new Date(invoiceYear, invoiceMonth - 2, preferredPaymentDate);
-
-    const monthsDiff = Math.floor((lastPossiblePaymentDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24 * 30));
-    const numberOfPayments = Math.min(10, Math.max(1, monthsDiff));
-
-    const basePaymentAmount = Math.floor((invoiceAmount / numberOfPayments) * 100) / 100;
-    const remainder = invoiceAmount - (basePaymentAmount * numberOfPayments);
 
     const payments = [];
-    let currentDate = new Date();
-    currentDate.setDate(preferredPaymentDate);
+    const numberOfPayments = 10;
+    const monthlyAmount = +(invoiceAmount / numberOfPayments).toFixed(2);
 
-    const minFirstPaymentDate = new Date(today);
-    minFirstPaymentDate.setDate(minFirstPaymentDate.getDate() + 7);
+    const year = endDate.getFullYear();
+    const month = endDate.getMonth();
+    const day = preferredDay;
 
-    if (currentDate <= minFirstPaymentDate) {
-      currentDate.setMonth(currentDate.getMonth() + 1);
-    }
-
-    for (let i = 0; i < numberOfPayments; i++) {
-      const amount = i === 0 
-        ? basePaymentAmount + remainder 
-        : basePaymentAmount;
-
-      const dateString = currentDate.toISOString().split('T')[0];
+    for (let i = numberOfPayments - 1; i >= 0; i--) {
+      const paymentDate = new Date(year, month - i, day);
+      if (!isValid(paymentDate)) continue;
       payments.push({
-        amount: Number(amount.toFixed(2)),
-        date: dateString
+        amount: monthlyAmount,
+        date: format(paymentDate, 'dd-MM-yyyy')
       });
-
-      currentDate.setMonth(currentDate.getMonth() + 1);
     }
 
-    const firstPayment = payments[0];
-    const lastPayment = payments[payments.length - 1];
-    const recurringAmount = payments.length > 1 ? payments[1].amount.toFixed(2) : null;
-    const formattedFirstDate = formatDateUK(firstPayment.date);
-    const formattedLastDate = formatDateUK(lastPayment.date);
-
-    const summaryText = payments.length === 1
-      ? `This payment plan relates to invoice No: ${invoiceNumber}. A single payment of £${firstPayment.amount.toFixed(2)} on ${formattedFirstDate}.`
-      : `This payment plan relates to invoice No: ${invoiceNumber}. The 1st payment should be £${firstPayment.amount.toFixed(2)} on ${formattedFirstDate}. Then please make ${payments.length - 1} equal monthly payments of £${recurringAmount} on the ${preferredPaymentDate} of each month, with your final payment on ${formattedLastDate}.`;
+    const rawPlan = payments.map((p, i) => `${i + 1}. £${p.amount} on ${p.date}`).join('\n');
 
     return {
       statusCode: 200,
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        totalAmount: invoiceAmount,
-        numberOfPayments,
-        payments,
-        stringifiedPayments: JSON.stringify(payments),
-        invoiceNumber,
-        summary: summaryText
+        rawPlan
       })
     };
-
-  } catch (error) {
+  } catch (err) {
     return {
       statusCode: 500,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ error: error.message })
+      body: JSON.stringify({ error: err.message })
     };
   }
 };

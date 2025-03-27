@@ -1,33 +1,5 @@
-const { parse } = require('date-fns');
-
-function parseFlexibleDate(inputStr) {
-  const formats = [
-    'dd/MM/yy', 'dd-MM-yy',
-    'dd/MM/yyyy', 'dd-MM-yyyy',
-    'ddMMyy', 'ddMMyyyy'
-  ];
-  for (const fmt of formats) {
-    try {
-      const parsed = parse(inputStr, fmt, new Date());
-      if (!isNaN(parsed)) {
-        return parsed.toLocaleDateString('en-GB').split('/').join('-');
-      }
-    } catch {}
-  }
-  return inputStr;
-}
-
-function getOrdinalSuffix(day) {
-  if (day >= 11 && day <= 13) return 'th';
-  const last = day % 10;
-  if (last === 1) return 'st';
-  if (last === 2) return 'nd';
-  if (last === 3) return 'rd';
-  return 'th';
-}
-
 exports.handler = async (event) => {
-  const EMS_KEY = "ems-key-9205643ef502";
+  const EMS_KEY = "ems_Key_32435457ef543";
 
   try {
     const incomingKey = event.headers['x-api-key'] || event.headers['X-API-Key'] || event.headers['x-api-key'.toLowerCase()];
@@ -39,33 +11,12 @@ exports.handler = async (event) => {
     }
 
     const body = JSON.parse(event.body);
-    let rawInput = body.stringifiedPayments;
-    let parsed = [];
+    const rawPlan = body.rawPlan;
 
-    try {
-      if (typeof rawInput === 'string') {
-        parsed = JSON.parse(rawInput);
-      } else if (Array.isArray(rawInput)) {
-        parsed = rawInput;
-      } else {
-        throw new Error("Invalid payments format");
-      }
-    } catch {
+    if (!rawPlan || typeof rawPlan !== 'string') {
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: "Invalid or missing payments array" })
-      };
-    }
-
-    const payments = parsed.map(p => ({
-      amount: p.amount,
-      date: parseFlexibleDate(p.date)
-    }));
-
-    if (payments.length < 2) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: "Not enough payments" })
+        body: JSON.stringify({ error: "Missing or invalid rawPlan" })
       };
     }
 
@@ -77,15 +28,20 @@ exports.handler = async (event) => {
     const zendeskOrgName = body.zendeskOrgName || '';
     const propRef = body.propRef || '';
 
-    const first = payments[0];
-    const recurring = payments[1];
-    const last = payments[payments.length - 1];
-    const recurringDay = parseInt(recurring.date.split('-')[0], 10);
-    const ordinal = getOrdinalSuffix(recurringDay);
+    // Generate summary based on first line
+    const lines = rawPlan.split('\n');
+    const firstPayment = lines[0]?.match(/£([\d.]+) on (\d{2}-\d{2}-\d{4})/);
+    const lastPayment = lines[lines.length - 1]?.match(/(\d{2}-\d{2}-\d{4})/);
+    const recurring = firstPayment?.[1];
+    const startDate = firstPayment?.[2];
+    const endDate = lastPayment?.[1];
+    const numberOfPayments = lines.length;
 
-    const summary = `This payment plan relates to invoice No: ${invoiceNo}. The first payment of £${first.amount.toFixed(2)} will be due on ${first.date}, then ${payments.length - 1} further equal monthly payments of £${recurring.amount.toFixed(2)} will be due the ${recurringDay}${ordinal} of each month, with your final payment due on ${last.date}.`;
+    const recurringDay = startDate?.split('-')[0];
+    const suffixMap = { '1': 'st', '2': 'nd', '3': 'rd' };
+    const ordinal = suffixMap[recurringDay] || 'th';
 
-    const rawPlan = payments.map((p, i) => `${i + 1}. £${p.amount} on ${p.date}`).join('\n');
+    const summary = `This payment plan relates to invoice No: ${invoiceNo}. The first payment of £${recurring} will be due on ${startDate}, then ${numberOfPayments - 1} further equal monthly payments of £${recurring} will be due the ${recurringDay}${ordinal} of each month, with your final payment due on ${endDate}.`;
 
     const jotformBase = "https://form.jotform.com/250839206727058";
     const searchParams = new URLSearchParams({
