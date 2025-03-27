@@ -8,6 +8,6 @@
   },
   "dependencies": {
     "date-fns": "^3.6.0",
-    "stripe": "^12.19.0"
+    "stripe": "^12.17.0"
   }
 }
