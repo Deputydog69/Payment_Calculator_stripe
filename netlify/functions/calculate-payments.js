@@ -1,5 +1,7 @@
 const { parse, isValid, subDays, format } = require('date-fns');
 
+const EMS_KEY = "ems_Key_32435457ef543";
+
 function parseFlexibleDate(inputStr) {
   const formats = [
     'dd/MM/yy', 'dd-MM-yy',
@@ -36,6 +38,14 @@ function fallbackToPreviousValidDate(inputStr) {
 }
 
 exports.handler = async (event) => {
+  const incomingKey = event.headers['x-api-key'] || event.headers['X-API-Key'] || event.headers['x-api-key'.toLowerCase()];
+  if (!incomingKey || incomingKey !== EMS_KEY) {
+    return {
+      statusCode: 401,
+      body: JSON.stringify({ error: "Unauthorised request" })
+    };
+  }
+
   try {
     const body = JSON.parse(event.body);
     const invoiceAmount = parseFloat(body.invoiceAmount);
