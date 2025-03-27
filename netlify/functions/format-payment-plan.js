@@ -1,5 +1,5 @@
 exports.handler = async (event) => {
-  const EMS_KEY = "ems-key-9205643ef502;
+  const EMS_KEY = "ems-key-9205643ef502";
 
   try {
     const incomingKey = event.headers['x-api-key'] || event.headers['X-API-Key'] || event.headers['x-api-key'.toLowerCase()];
@@ -32,7 +32,7 @@ exports.handler = async (event) => {
     // Accept both real and escaped newlines
     const lines = rawPlan.split(/\\n|\n|\r|\r\n/g);
 
-    const firstLine = lines[0]?.match(/\u00a3([\d.]+) on (\d{2}-\d{2}-\d{4})/);
+    const firstLine = lines[0]?.match(/£([\d.]+) on (\d{2}-\d{2}-\d{4})/);
     const lastLine = lines[lines.length - 1]?.match(/(\d{2}-\d{2}-\d{4})/);
     const recurringAmount = firstLine?.[1];
     const startDate = firstLine?.[2];
@@ -41,7 +41,7 @@ exports.handler = async (event) => {
     const suffixMap = { '1': 'st', '2': 'nd', '3': 'rd' };
     const ordinal = suffixMap[recurringDay] || 'th';
 
-    const summary = `This payment plan relates to invoice No: ${invoiceNo}. The first payment of \u00a3${recurringAmount} will be due on ${startDate}, then ${lines.length - 1} further equal monthly payments of \u00a3${recurringAmount} will be due the ${recurringDay}${ordinal} of each month, with your final payment due on ${endDate}.`;
+    const summary = `This payment plan relates to invoice No: ${invoiceNo}. The first payment of £${recurringAmount} will be due on ${startDate}, then ${lines.length - 1} further equal monthly payments of £${recurringAmount} will be due the ${recurringDay}${ordinal} of each month, with your final payment due on ${endDate}.`;
 
     const jotformBase = "https://form.jotform.com/250839206727058";
     const searchParams = new URLSearchParams({
