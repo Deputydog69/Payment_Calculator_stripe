@@ -45,7 +45,7 @@ exports.handler = async (event) => {
 
     const jotformBase = "https://form.jotform.com/250839206727058";
     const allParams = new URLSearchParams({
-      plan14: rawPlan,
+      plan14: rawPlan.replace(/£/g, '&pound;').replace(/ /g, '%20'),
       user_name: userName,
       email,
       user_id: userId,
