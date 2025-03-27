@@ -1,4 +1,4 @@
-const { parse, isValid, subDays, format } = require('date-fns');
+const { parse, isValid, subDays, addDays, format, differenceInMonths } = require('date-fns');
 
 const EMS_KEY = "ems-key-9205643ef502";
 
@@ -9,14 +9,12 @@ function parseFlexibleDate(inputStr) {
     'ddMMyy', 'ddMMyyyy',
     'yyyy-MM-dd'
   ];
-
   for (const fmt of formats) {
     try {
       const parsed = parse(inputStr, fmt, new Date());
       if (isValid(parsed)) return parsed;
     } catch {}
   }
-
   try {
     const parsed = new Date(inputStr);
     return isValid(parsed) ? parsed : null;
@@ -28,12 +26,10 @@ function parseFlexibleDate(inputStr) {
 function fallbackToPreviousValidDate(inputStr) {
   let date = parseFlexibleDate(inputStr);
   let attempts = 0;
-
   while ((!date || !isValid(date)) && attempts < 5) {
     date = subDays(date || new Date(), 1);
     attempts++;
   }
-
   return isValid(date) ? date : null;
 }
 
@@ -64,6 +60,10 @@ exports.handler = async (event) => {
     const invoiceNumber = body.invoiceNumber || 'unknown';
 
     const endDate = fallbackToPreviousValidDate(endDateInput);
+    const today = new Date();
+    const firstAllowed = addDays(today, 7);
+    const adjustedEnd = subDays(new Date(endDate.getFullYear(), 2, 1), 0); // Must complete by 01-March
+
     if (!endDate || isNaN(invoiceAmount) || isNaN(preferredDay)) {
       return {
         statusCode: 400,
@@ -72,42 +72,40 @@ exports.handler = async (event) => {
       };
     }
 
-    const payments = [];
-    const numberOfPayments = 10;
-    const monthlyAmount = +(invoiceAmount / numberOfPayments).toFixed(2);
-
-    const year = endDate.getFullYear();
-    const month = endDate.getMonth();
-    const day = preferredDay;
-
-    for (let i = numberOfPayments - 1; i >= 0; i--) {
-      const paymentDate = new Date(year, month - i, day);
-      if (!isValid(paymentDate)) continue;
-      payments.push({
-        amount: monthlyAmount,
-        date: format(paymentDate, 'dd-MM-yyyy')
-      });
+    // Generate candidate monthly dates
+    let candidate = new Date(firstAllowed.getFullYear(), firstAllowed.getMonth(), preferredDay);
+    if (candidate < firstAllowed) {
+      candidate = addDays(new Date(candidate.setMonth(candidate.getMonth() + 1)), 0);
     }
 
-    const rawPlan = payments.map((p, i) => `${i + 1}. £${p.amount} on ${p.date}`).join('\n');
+    const dates = [];
+    while (candidate <= adjustedEnd && dates.length < 10) {
+      dates.push(new Date(candidate));
+      candidate.setMonth(candidate.getMonth() + 1);
+    }
 
-    const recurringAmount = payments[1]?.amount.toFixed(2);
-    const startDate = payments[0]?.date;
-    const endDateStr = payments[payments.length - 1]?.date;
-    const recurringDay = startDate?.split('-')[0];
+    const numberOfPayments = dates.length;
+    const fixedMonthly = Math.floor(invoiceAmount / numberOfPayments);
+    const remainder = +(invoiceAmount - fixedMonthly * (numberOfPayments - 1)).toFixed(2);
+
+    const payments = [
+      { amount: remainder, date: format(dates[0], 'dd-MM-yyyy') },
+      ...dates.slice(1).map(date => ({ amount: fixedMonthly, date: format(date, 'dd-MM-yyyy') }))
+    ];
+
+    const rawPlan = payments.map((p, i) => `${i + 1}. £${p.amount.toFixed(2)} on ${p.date}`).join('\n');
+
+    const startDate = payments[0].date;
+    const endDateStr = payments[payments.length - 1].date;
+    const recurringDay = startDate.split('-')[0];
     const ordinal = getOrdinalSuffix(parseInt(recurringDay, 10));
 
-    const summary = `This payment plan relates to invoice No: ${invoiceNumber}. The first payment of £${payments[0].amount.toFixed(2)} will be due on ${startDate}, then ${payments.length - 1} further equal monthly payments of £${recurringAmount} will be due the ${recurringDay}${ordinal} of each month, with your final payment due on ${endDateStr}.`;
+    const summary = `This payment plan relates to invoice No: ${invoiceNumber}. The first payment of £${payments[0].amount.toFixed(2)} will be due on ${startDate}, then ${payments.length - 1} further equal monthly payments of £${fixedMonthly.toFixed(2)} will be due the ${recurringDay}${ordinal} of each month, with your final payment due on ${endDateStr}.`;
 
     return {
       statusCode: 200,
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        rawPlan,
-        summary
-      })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rawPlan, summary })
     };
   } catch (err) {
     return {
