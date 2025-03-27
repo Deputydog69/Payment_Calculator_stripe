@@ -27,7 +27,7 @@ function getOrdinalSuffix(day) {
 }
 
 exports.handler = async (event) => {
-  const EMS_KEY = "ems-Key-9205643ef502";
+  const EMS_KEY = "ems-key-9205643ef502";
 
   try {
     const incomingKey = event.headers['x-api-key'] || event.headers['X-API-Key'] || event.headers['x-api-key'.toLowerCase()];
