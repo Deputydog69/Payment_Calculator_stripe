@@ -44,8 +44,8 @@ exports.handler = async (event) => {
     const summary = `This payment plan relates to invoice No: ${invoiceNo}. The first payment of £${recurringAmount} will be due on ${startDate}, then ${lines.length - 1} further equal monthly payments of £${recurringAmount} will be due the ${recurringDay}${ordinal} of each month, with your final payment due on ${endDate}.`;
 
     const jotformBase = "https://form.jotform.com/250839206727058";
-    const planEncoded = encodeURIComponent(rawPlan);
-    const otherParams = new URLSearchParams({
+    const allParams = new URLSearchParams({
+      plan14: rawPlan,
       user_name: userName,
       email,
       user_id: userId,
@@ -54,7 +54,7 @@ exports.handler = async (event) => {
       prop_ref: propRef,
       invoice_no: invoiceNo
     });
-    const jotformURL = `${jotformBase}?plan14=${planEncoded}&${otherParams.toString()}`;
+    const jotformURL = `${jotformBase}?${allParams.toString()}`;
 
     return {
       statusCode: 200,
