@@ -1,4 +1,4 @@
-// version: 10.7
+// version: 11.0
 
 exports.handler = async (event) => {
   const EMS_KEY = process.env.EMS_KEY;
@@ -49,11 +49,11 @@ exports.handler = async (event) => {
       plan14: rawPlan.replace(/£/g, 'GBP'),
       user_name: userName,
       email: email,
-      user_id: $1,
-      org_id: encodeURIComponent(zendeskOrgId),
-      org_name: encodeURIComponent(zendeskOrgName),
-      prop_ref: encodeURIComponent(propRef),
-      invoice_no: encodeURIComponent(invoiceNo)
+      user_id: userId,
+      org_id: zendeskOrgId,
+      org_name: zendeskOrgName,
+      prop_ref: propRef,
+      invoice_no: invoiceNo
     });
 
     const fullUrl = `${jotformBase}?${allParams.toString()}`;
