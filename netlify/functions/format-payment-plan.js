@@ -1,4 +1,4 @@
-// version: 11.3
+// version: 11.4
 
 exports.handler = async (event) => {
   const EMS_KEY = process.env.EMS_KEY;
@@ -45,18 +45,21 @@ exports.handler = async (event) => {
     const summary = `This payment plan relates to invoice No: ${invoiceNo}. The first payment of £${recurringAmount} will be due on ${startDate}, then ${lines.length - 1} further equal monthly payments of £${recurringAmount} will be due the ${recurringDay}${ordinal} of each month, with your final payment due on ${endDate}.`;
 
     const jotformBase = "https://form.jotform.com/250839206727058";
-    const allParams = new URLSearchParams({
-      plan14: encodeURIComponent(rawPlan.replace(/£/g, 'GBP')),
-      user_name: userName,
-      email: email,
-      user_id: userId,
-      org_id: zendeskOrgId,
-      org_name: zendeskOrgName,
-      prop_ref: propRef,
-      invoice_no: invoiceNo
-    });
 
-    const fullUrl = `${jotformBase}?${allParams.toString()}`;
+    const plan14Encoded = encodeURIComponent(rawPlan.replace(/£/g, '£'));
+
+    const queryString = [
+      `plan14=${plan14Encoded}`,
+      `user_name=${encodeURIComponent(userName)}`,
+      `email=${encodeURIComponent(email)}`,
+      `user_id=${encodeURIComponent(userId)}`,
+      `org_id=${encodeURIComponent(zendeskOrgId)}`,
+      `org_name=${encodeURIComponent(zendeskOrgName)}`,
+      `prop_ref=${encodeURIComponent(propRef)}`,
+      `invoice_no=${encodeURIComponent(invoiceNo)}`
+    ].join('&');
+
+    const fullUrl = `${jotformBase}?${queryString}`;
     const jotform_url1 = fullUrl.slice(0, 280);
     const jotform_url2 = fullUrl.slice(280, 560);
     const jotform_url3 = fullUrl.slice(560);
