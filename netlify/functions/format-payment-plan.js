@@ -1,4 +1,4 @@
-// version: 11.1
+// version: 11.2
 
 exports.handler = async (event) => {
   const EMS_KEY = process.env.EMS_KEY;
@@ -46,7 +46,7 @@ exports.handler = async (event) => {
 
     const jotformBase = "https://form.jotform.com/250839206727058";
     const allParams = new URLSearchParams({
-      plan14: rawPlan.replace(/£/g, 'GBP').replace(/ \+ /g, ' '),
+      plan14: rawPlan.replace(/£/g, 'GBP').replace(/\+/g, ' '),
       user_name: userName,
       email: email,
       user_id: userId,
