@@ -1,4 +1,4 @@
-// version: 10.5
+// version: 10.7
 
 exports.handler = async (event) => {
   const EMS_KEY = process.env.EMS_KEY;
@@ -47,9 +47,9 @@ exports.handler = async (event) => {
     const jotformBase = "https://form.jotform.com/250839206727058";
     const allParams = new URLSearchParams({
       plan14: rawPlan.replace(/£/g, 'GBP'),
-      user_name: $1,
-      email: encodeURIComponent(email),
-      user_id: encodeURIComponent(userId),
+      user_name: userName,
+      email: email,
+      user_id: $1,
       org_id: encodeURIComponent(zendeskOrgId),
       org_name: encodeURIComponent(zendeskOrgName),
       prop_ref: encodeURIComponent(propRef),
